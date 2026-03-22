@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            const response = await fetch('http://localhost:3000/api/users/me', {
+            const response = await fetch('http://localhost:5000/api/users/me', {
                 method: 'GET',
                 headers: {
                     'x-auth-token': token,
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Profile image - use existing or generate from name/email
         if (userData.profileImage || userData.profilePictureUrl) {
             const imageUrl = userData.profileImage || userData.profilePictureUrl;
-            const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `http://localhost:3000${imageUrl}`;
+            const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `http://localhost:5000${imageUrl}`;
             profileImagePreview.src = fullImageUrl;
             
             // Handle image load errors
@@ -416,7 +416,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:3000/api/users/me', {
+            const response = await fetch('http://localhost:5000/api/users/me', {
                 method: 'PUT',
                 headers: {
                     'x-auth-token': token

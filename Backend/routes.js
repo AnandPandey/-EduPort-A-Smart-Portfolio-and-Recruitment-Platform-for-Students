@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 // Ensure the path to your middleware is correct relative to routes.js
-const auth = require('./middleware/auth'); 
+const auth = require('./middleware/auth');
 const Project = require('./models/Project');
 const User = require('./models/User');
 
@@ -129,7 +129,7 @@ router.delete('/:id', auth, async (req, res) => {
     if (fs.existsSync(imagePath)) {
       fs.unlinkSync(imagePath);
     }
-    
+
     // FIX: Replaced deprecated .remove() with the modern .deleteOne()
     await Project.deleteOne({ _id: req.params.id });
 
@@ -148,7 +148,7 @@ router.delete('/:id', auth, async (req, res) => {
 router.put('/:id/upvote', auth, async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
-    
+
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
@@ -171,7 +171,8 @@ router.put('/:id/upvote', auth, async (req, res) => {
         userId => userId.toString() !== req.user.id
       );
     }
-    
+
+    project.upvotes = project.upvotedBy.length;
     await project.save();
     res.json(project);
   } catch (err) {
@@ -186,7 +187,7 @@ router.put('/:id/upvote', auth, async (req, res) => {
 router.put('/:id/downvote', auth, async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
-    
+
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
@@ -209,7 +210,7 @@ router.put('/:id/downvote', auth, async (req, res) => {
         userId => userId.toString() !== req.user.id
       );
     }
-    
+
     await project.save();
     res.json(project);
   } catch (err) {
@@ -227,7 +228,7 @@ router.put('/:id/downvote', auth, async (req, res) => {
 router.post('/:id/comment', auth, async (req, res) => {
   const { text } = req.body;
   if (!text) {
-      return res.status(400).json({ message: 'Comment text is required.' });
+    return res.status(400).json({ message: 'Comment text is required.' });
   }
 
   try {
@@ -235,7 +236,7 @@ router.post('/:id/comment', auth, async (req, res) => {
     const project = await Project.findById(req.params.id);
 
     if (!project) {
-        return res.status(404).json({ message: 'Project not found.' });
+      return res.status(404).json({ message: 'Project not found.' });
     }
 
     const newComment = {
@@ -243,7 +244,7 @@ router.post('/:id/comment', auth, async (req, res) => {
       text: text,
       name: user.name,
       // FIX: Corrected 'avatar' to 'profilePictureUrl' to match the User model
-      avatar: user.profilePictureUrl 
+      avatar: user.profilePictureUrl
     };
 
     project.comments.unshift(newComment);
@@ -260,30 +261,30 @@ router.post('/:id/comment', auth, async (req, res) => {
 // @desc    Delete a comment from a project
 // @access  Private
 router.delete('/:id/comment/:comment_id', auth, async (req, res) => {
-    try {
-        const project = await Project.findById(req.params.id);
-        const comment = project.comments.find(
-            comment => comment.id === req.params.comment_id
-        );
+  try {
+    const project = await Project.findById(req.params.id);
+    const comment = project.comments.find(
+      comment => comment.id === req.params.comment_id
+    );
 
-        if (!comment) {
-            return res.status(404).json({ message: 'Comment not found.' });
-        }
-
-        if (comment.user.toString() !== req.user.id) {
-            return res.status(401).json({ message: 'User not authorized.' });
-        }
-
-        project.comments = project.comments.filter(
-            ({ id }) => id.toString() !== req.params.comment_id
-        );
-
-        await project.save();
-        res.json(project.comments);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found.' });
     }
+
+    if (comment.user.toString() !== req.user.id) {
+      return res.status(401).json({ message: 'User not authorized.' });
+    }
+
+    project.comments = project.comments.filter(
+      ({ id }) => id.toString() !== req.params.comment_id
+    );
+
+    await project.save();
+    res.json(project.comments);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
 });
 
 module.exports = router;

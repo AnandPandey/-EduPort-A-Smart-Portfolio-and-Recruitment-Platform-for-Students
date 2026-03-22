@@ -45,7 +45,7 @@ function initializeProfile() {
 async function loadUserProfile() {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:3000/api/users/me', {
+        const response = await fetch('http://localhost:5000/api/users/me', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -90,7 +90,7 @@ function populateProfileForm(user) {
 async function loadAllProjects() {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:3000/api/projects/community', {
+        const response = await fetch('http://localhost:5000/api/projects/community', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -194,7 +194,7 @@ function getCurrentUserId() {
 async function handleVote(projectId, voteType, button) {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:3000/api/projects/${projectId}/${voteType}`, {
+        const response = await fetch(`http://localhost:5000/api/projects/${projectId}/${voteType}`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -263,7 +263,7 @@ async function submitComment() {
     
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:3000/api/projects/${currentCommentProjectId}/comments`, {
+        const response = await fetch(`http://localhost:5000/api/projects/${currentCommentProjectId}/comments`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -381,7 +381,7 @@ async function handleProfileSubmit(e) {
     
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:3000/api/users/update-profile', {
+        const response = await fetch('http://localhost:5000/api/users/update-profile', {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`

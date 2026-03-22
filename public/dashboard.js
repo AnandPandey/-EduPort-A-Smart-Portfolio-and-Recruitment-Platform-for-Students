@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- API Call to Fetch User Profile Data ---
     const loadUserProfile = async () => {
         try {
-            const res = await fetch('http://localhost:3000/api/users/me', {
+            const res = await fetch('http://localhost:5000/api/users/me', {
                 headers: { 'x-auth-token': token }
             });
 
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- API Call to Fetch and Display Projects ---
     const fetchAndDisplayProjects = async () => {
         try {
-            const res = await fetch('http://localhost:3000/api/projects', {
+            const res = await fetch('http://localhost:5000/api/projects', {
                 headers: { 'x-auth-token': token }
             });
 

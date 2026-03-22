@@ -1,5 +1,5 @@
 // Wait for the entire HTML document to be fully loaded and parsed
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
 
     /**
      * A helper function to create and display notifications on the screen.
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const togglePassword = document.querySelector('.toggle-password');
     const passwordInput = document.querySelector('#password');
     if (togglePassword && passwordInput) {
-        togglePassword.addEventListener('click', function() {
+        togglePassword.addEventListener('click', function () {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
             // Toggle the eye icon class
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Form submission for Email/Password Login ---
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
-        loginForm.addEventListener('submit', async function(e) {
+        loginForm.addEventListener('submit', async function (e) {
             // CRITICAL: Prevents the browser's default form submission
             e.preventDefault();
 
@@ -59,12 +59,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const buttonInner = loginBtn.querySelector('span');
 
             // Provide visual feedback that something is happening
-            if(buttonInner) buttonInner.textContent = 'Signing In...';
+            if (buttonInner) buttonInner.textContent = 'Signing In...';
             loginBtn.disabled = true;
 
             try {
                 // Send the data to the backend's POST /login route
-                const response = await fetch('http://localhost:3000/login', {
+                const response = await fetch('http://localhost:5000/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -82,19 +82,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (response.ok) {
                     console.log('Login response data:', data); // Debug log
                     showNotification(data.message || 'Login successful!', 'success');
-                    
+
                     // Save the token and role from backend response
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('userRole', data.role); // Use backend role, not selected role
-                    
+
                     console.log('Backend returned role:', data.role); // Debug log
                     console.log('Selected role was:', selectedRole); // Debug log
                     console.log('Final role stored:', data.role); // Debug log
                     console.log('Redirecting to:', data.redirectTo); // Debug log
-                    
+
                     // Clear the selected role from session storage
                     sessionStorage.removeItem('selectedRole');
-                    
+
                     // CRITICAL FIX: Redirect to role-specific dashboard
                     setTimeout(() => {
                         if (data.redirectTo) {
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // This block runs whether the request succeeded or failed
                 // Reset the button to its original state (unless redirecting)
                 if (!localStorage.getItem('token')) {
-                    if(buttonInner) buttonInner.textContent = 'Sign In';
+                    if (buttonInner) buttonInner.textContent = 'Sign In';
                     loginBtn.disabled = false;
                 }
             }
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (googleBtn) {
         googleBtn.addEventListener('click', () => {
             // Redirect the user to the backend's Google auth route
-            window.location.href = 'http://localhost:3000/auth/google';
+            window.location.href = 'http://localhost:5000/auth/google';
         });
     }
 

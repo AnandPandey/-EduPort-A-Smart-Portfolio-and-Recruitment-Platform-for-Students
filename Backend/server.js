@@ -13,6 +13,7 @@ const multer = require('multer'); // Import multer for file uploads
 require('dotenv').config();
 
 const connectDB = require('./db');
+const Message = require('./models/Message');
 const User = require('./models/User');
 const Project = require('./models/Project');
 const auth = require('./middleware/auth');
@@ -24,7 +25,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'a_super_secret_jwt_key_that_is_lon
 // 2. INITIALIZE APP & CONNECT TO DATABASE
 // =================================================================
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 5000;
 
 connectDB();
 
@@ -41,9 +42,9 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/projects', projectRoutes);
 
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'a_default_session_secret',
-  resave: false,
-  saveUninitialized: true,
+    secret: process.env.SESSION_SECRET || 'a_default_session_secret',
+    resave: false,
+    saveUninitialized: true,
 }));
 
 app.use(passport.initialize());
@@ -54,11 +55,11 @@ app.use(passport.session());
 // =================================================================
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, 'uploads/'); // The folder where files will be stored
+        cb(null, 'uploads/'); // The folder where files will be stored
     },
     filename: function (req, file, cb) {
-      // Create a unique filename to avoid overwriting existing files
-      cb(null, Date.now() + path.extname(file.originalname));
+        // Create a unique filename to avoid overwriting existing files
+        cb(null, Date.now() + path.extname(file.originalname));
     }
 });
 const upload = multer({ storage: storage });
@@ -79,68 +80,68 @@ passport.deserializeUser(async (id, done) => {
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/auth/google/callback"
-  },
-  async (accessToken, refreshToken, profile, done) => {
-    const { displayName, emails, photos } = profile;
-    const email = emails[0].value;
-    const profilePictureUrl = photos[0].value;
-    try {
-        let user = await User.findOne({ email: email });
-        if (user) {
-            user.name = displayName;
-            user.profilePictureUrl = profilePictureUrl;
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || "http://localhost:5000/auth/google/callback"
+},
+    async (accessToken, refreshToken, profile, done) => {
+        const { displayName, emails, photos } = profile;
+        const email = emails[0].value;
+        const profilePictureUrl = photos[0].value;
+        try {
+            let user = await User.findOne({ email: email });
+            if (user) {
+                user.name = displayName;
+                user.profilePictureUrl = profilePictureUrl;
+                await user.save();
+                return done(null, user);
+            }
+            const randomPassword = Math.random().toString(36).slice(-8);
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(randomPassword, salt);
+            user = new User({
+                name: displayName,
+                email: email,
+                profilePictureUrl: profilePictureUrl,
+                password: hashedPassword,
+            });
             await user.save();
-            return done(null, user);
+            done(null, user);
+        } catch (err) {
+            console.error(err);
+            return done(err, null);
         }
-        const randomPassword = Math.random().toString(36).slice(-8);
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(randomPassword, salt);
-        user = new User({
-            name: displayName,
-            email: email,
-            profilePictureUrl: profilePictureUrl,
-            password: hashedPassword,
-        });
-        await user.save();
-        done(null, user);
-    } catch (err) {
-        console.error(err);
-        return done(err, null);
     }
-  }
 ));
 
 // =================================================================
 // 6. DEFINE API ROUTES
 // =================================================================
-app.use('/api/projects', require('./routes'));
+// Duplicate route mounting removed (already mounted on line 41)
 
 // --- AUTHENTICATION ROUTES ---
 app.post('/register', async (req, res) => {
-  const { name, email, password, role } = req.body;
-  if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Name, email, and password are required.' });
-  }
-  try {
-    let user = await User.findOne({ email });
-    if (user) {
-        return res.status(400).json({ message: 'Email already exists.' });
+    const { name, email, password, role } = req.body;
+    if (!name || !email || !password) {
+        return res.status(400).json({ message: 'Name, email, and password are required.' });
     }
-    user = new User({ 
-      name, 
-      email, 
-      password,
-      role: role && ['student', 'teacher'].includes(role) ? role : 'student'
-    });
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
-    await user.save();
-    res.status(201).json({ message: 'User registered successfully!' });
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Server error');
-  }
+    try {
+        let user = await User.findOne({ email });
+        if (user) {
+            return res.status(400).json({ message: 'Email already exists.' });
+        }
+        user = new User({
+            name,
+            email,
+            password,
+            role: role && ['student', 'teacher'].includes(role) ? role : 'student'
+        });
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(password, salt);
+        await user.save();
+        res.status(201).json({ message: 'User registered successfully!' });
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send('Server error');
+    }
 });
 
 app.post('/login', async (req, res) => {
@@ -150,7 +151,7 @@ app.post('/login', async (req, res) => {
         if (!user) return res.status(400).json({ message: 'Invalid credentials.' });
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ message: 'Invalid credentials.' });
-        
+
         // CRITICAL FIX: Always update user role based on login selection
         // This ensures the database role matches what the user selected
         if (role && ['student', 'teacher'].includes(role)) {
@@ -158,19 +159,19 @@ app.post('/login', async (req, res) => {
             user.role = role;
             await user.save();
         }
-        
+
         // Ensure user has a valid role, default to student if not set
         if (!user.role || !['student', 'teacher'].includes(user.role)) {
             user.role = 'student';
             await user.save();
         }
-        
+
         console.log(`User ${user.email} logged in as ${user.role}`);
-        
+
         const payload = { user: { id: user.id, role: user.role } };
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
-        res.json({ 
-            token, 
+        res.json({
+            token,
             role: user.role,
             message: `Login successful as ${user.role}`,
             redirectTo: user.role === 'teacher' ? 'teacher-dashboard.html' : 'student-dashboard.html'
@@ -204,20 +205,20 @@ const profileStorage = multer.diskStorage({
         } else {
             uploadPath = path.join(__dirname, '../uploads/misc');
         }
-        
+
         // Create directory if it doesn't exist
         const fs = require('fs');
         if (!fs.existsSync(uploadPath)) {
             fs.mkdirSync(uploadPath, { recursive: true });
         }
-        
+
         cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const extension = path.extname(file.originalname);
         let prefix;
-        
+
         if (file.fieldname === 'profilePicture' || file.fieldname === 'profileImage') {
             prefix = 'profile';
         } else if (file.fieldname === 'resume') {
@@ -225,7 +226,7 @@ const profileStorage = multer.diskStorage({
         } else {
             prefix = 'file';
         }
-        
+
         cb(null, `${prefix}-${uniqueSuffix}${extension}`);
     }
 });
@@ -263,13 +264,13 @@ app.put('/api/users/update-profile', auth, profileUpload.fields([
 ]), async (req, res) => {
     try {
         const { name, username, bio, linkedin, github, portfolio, twitter } = req.body;
-        
+
         // Find the user
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        
+
         // Update basic fields
         if (name) user.name = name;
         if (username) user.username = username;
@@ -278,7 +279,7 @@ app.put('/api/users/update-profile', auth, profileUpload.fields([
         if (github) user.github = github;
         if (portfolio) user.portfolio = portfolio;
         if (twitter) user.twitter = twitter;
-        
+
         // Handle file uploads
         if (req.files) {
             if (req.files.profileImage && req.files.profileImage[0]) {
@@ -288,13 +289,13 @@ app.put('/api/users/update-profile', auth, profileUpload.fields([
                 user.resume = `/uploads/resumes/${req.files.resume[0].filename}`;
             }
         }
-        
+
         await user.save();
-        
+
         // Return updated user (without password)
         const updatedUser = await User.findById(user._id).select('-password');
         res.json(updatedUser);
-        
+
     } catch (err) {
         console.error('Profile update error:', err.message);
         res.status(500).json({ message: 'Server error updating profile' });
@@ -394,9 +395,9 @@ app.post('/api/projects/:id/comments', auth, async (req, res) => {
         console.log('Comment route hit:', req.params.id);
         console.log('Request body:', req.body);
         console.log('User ID:', req.user.id);
-        
+
         const { text } = req.body;
-        
+
         // Validate comment text first
         if (!text || typeof text !== 'string' || text.trim().length === 0) {
             console.log('Invalid text provided:', text);
@@ -413,7 +414,7 @@ app.post('/api/projects/:id/comments', auth, async (req, res) => {
             console.log('User not found:', req.user.id);
             return res.status(404).json({ message: 'User not found' });
         }
-        
+
         if (user.role !== 'teacher') {
             console.log('User is not a teacher:', user.role);
             return res.status(403).json({ message: 'Only teachers can add comments' });
@@ -439,25 +440,25 @@ app.post('/api/projects/:id/comments', auth, async (req, res) => {
         if (!project.comments) {
             project.comments = [];
         }
-        
+
         project.comments.push(newComment);
-        
+
         // Save the project
         const savedProject = await project.save();
         console.log('Project saved with comment');
 
         // Return success response
-        res.status(201).json({ 
+        res.status(201).json({
             success: true,
             message: 'Comment added successfully',
             comment: newComment,
             commentCount: savedProject.comments.length
         });
-        
+
     } catch (err) {
         console.error('Add comment error:', err);
-        res.status(500).json({ 
-            message: 'Server Error', 
+        res.status(500).json({
+            message: 'Server Error',
             error: err.message,
             stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
         });
@@ -470,7 +471,7 @@ app.get('/api/projects/:projectId/comments', auth, async (req, res) => {
         const project = await Project.findById(req.params.projectId)
             .populate('comments.user', 'name email')
             .select('comments');
-        
+
         if (!project) {
             return res.status(404).json({ message: 'Project not found' });
         }
@@ -511,17 +512,77 @@ app.get('/api/students/:userId/profile', auth, async (req, res) => {
 });
 
 
-// --- USER PROFILE ROUTES ---
-// Get current user profile (for authentication validation)
-app.get('/api/users/me', auth, async (req, res) => {
+// =================================================================
+// 6. MESSAGING ROUTES
+// =================================================================
+
+// @route   POST /api/messages
+// @desc    Send a message (teacher → student)
+app.post('/api/messages', auth, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).select('-password');
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+        const { to, text } = req.body;
+        if (!to || !text) {
+            return res.status(400).json({ message: 'Recipient and message text are required' });
         }
-        res.json(user);
+        const message = new Message({ from: req.user.id, to, text });
+        await message.save();
+        const populated = await Message.findById(message._id)
+            .populate('from', 'name email profilePictureUrl')
+            .populate('to', 'name email profilePictureUrl');
+        res.status(201).json(populated);
     } catch (err) {
-        console.error('Get user profile error:', err.message);
+        console.error('Send message error:', err.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @route   GET /api/messages/unread
+// @desc    Get unread message count + latest 5 unread
+app.get('/api/messages/unread', auth, async (req, res) => {
+    try {
+        const messages = await Message.find({ to: req.user.id, read: false })
+            .populate('from', 'name email profilePictureUrl')
+            .sort({ createdAt: -1 })
+            .limit(5);
+        const count = await Message.countDocuments({ to: req.user.id, read: false });
+        res.json({ count, messages });
+    } catch (err) {
+        console.error('Get unread messages error:', err.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @route   GET /api/messages
+// @desc    Get all messages for the current user
+app.get('/api/messages', auth, async (req, res) => {
+    try {
+        const messages = await Message.find({
+            $or: [{ to: req.user.id }, { from: req.user.id }]
+        })
+            .populate('from', 'name email profilePictureUrl role')
+            .populate('to', 'name email profilePictureUrl role')
+            .sort({ createdAt: -1 });
+        res.json(messages);
+    } catch (err) {
+        console.error('Get messages error:', err.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @route   PUT /api/messages/:id/read
+// @desc    Mark a message as read
+app.put('/api/messages/:id/read', auth, async (req, res) => {
+    try {
+        const message = await Message.findById(req.params.id);
+        if (!message) return res.status(404).json({ message: 'Message not found' });
+        if (message.to.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Not authorized' });
+        }
+        message.read = true;
+        await message.save();
+        res.json(message);
+    } catch (err) {
+        console.error('Mark read error:', err.message);
         res.status(500).json({ message: 'Server Error' });
     }
 });
@@ -529,17 +590,17 @@ app.get('/api/users/me', auth, async (req, res) => {
 // --- GOOGLE AUTH ROUTES ---
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-app.get('/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/login.html', session: false }),
-  (req, res) => {
-    const payload = { user: { id: req.user.id } };
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
-    res.redirect(`/dashboard.html?token=${token}`);
-  });
+app.get('/auth/google/callback',
+    passport.authenticate('google', { failureRedirect: '/login.html', session: false }),
+    (req, res) => {
+        const payload = { user: { id: req.user.id } };
+        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+        res.redirect(`/dashboard.html?token=${token}`);
+    });
 
 // =================================================================
 // 7. START THE SERVER
 // =================================================================
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+    console.log(`Server is running on http://localhost:${port}`);
 });
