@@ -20,7 +20,7 @@ const auth = require('./middleware/auth');
 const projectRoutes = require('./routes');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'a_super_secret_jwt_key_that_is_long_and_random';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5500';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://127.0.0.1:3000';
 
 // =================================================================
 // 2. INITIALIZE APP & CONNECT TO DATABASE
@@ -41,7 +41,8 @@ app.use(cors({
             FRONTEND_URL,
             'http://localhost:5500',
             'http://127.0.0.1:5500',
-            'http://localhost:3000'
+            'http://localhost:3000',
+            'http://127.0.0.1:3000'
         ];
         if (allowedOrigins.includes(origin)) {
             return callback(null, true);
