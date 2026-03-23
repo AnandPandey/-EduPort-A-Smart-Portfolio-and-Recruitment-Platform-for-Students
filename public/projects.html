@@ -16,9 +16,26 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="stylesheet" href="projects.css" />
   <style>
-    /* ========== OVERRIDE base body bg to keep wood but add Inter ========== */
+    /* ========== DESIGN TOKENS ========== */
+    :root {
+      --bg: #050d0d;
+      --bg-card: rgba(10, 30, 30, .55);
+      --surface: #0b1c1c;
+      --border: rgba(20, 184, 166, .12);
+      --border-hl: rgba(20, 184, 166, .30);
+      --txt: #e2e8f0;
+      --txt2: #94a3b8;
+      --txt3: #64748b;
+      --accent: #14b8a6;
+      --accent2: #0d9488;
+      --accent3: #2dd4bf;
+      --grad: linear-gradient(135deg, #0d9488 0%, #14b8a6 50%, #2dd4bf 100%);
+    }
+
     body {
       font-family: 'Inter', system-ui, sans-serif !important;
+      background: var(--bg);
+      color: var(--txt);
     }
 
     /* ========== DASHBOARD SIDEBAR (synced with student/teacher) ========== */
@@ -143,7 +160,7 @@
       gap: 10px;
       padding: 8px;
       border-radius: 14px;
-      transition: background .2s
+      transition: all .2s;
     }
 
     .side-usr:hover {
@@ -206,18 +223,50 @@
 
     /* ========== Override top-bar for cohesion ========== */
     .top-bar {
+      position: fixed;
+      top: 0;
+      right: 0;
       left: 250px !important;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      z-index: 100;
       background: rgba(5, 13, 13, .55) !important;
       backdrop-filter: blur(14px);
       border-bottom: 1px solid rgba(20, 184, 166, .08);
-      padding: 0.75rem 2rem !important
+      padding: 0.75rem 2rem !important;
+      transition: left .35s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .user-profile {
+      position: relative;
+      cursor: pointer;
     }
 
     .user-profile img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
       border: 2px solid rgba(20, 184, 166, .3) !important
     }
 
     .profile-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      min-width: 200px;
+      padding: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.3s ease;
       background: rgba(11, 28, 28, .95) !important;
       border: 1px solid rgba(20, 184, 166, .12) !important;
       backdrop-filter: blur(18px);
@@ -225,21 +274,39 @@
       box-shadow: 0 8px 36px rgba(0, 0, 0, .5) !important
     }
 
+    .user-profile:hover .profile-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
     .profile-menu-header {
-      border-bottom-color: rgba(20, 184, 166, .12) !important
+      padding-bottom: 0.5rem;
+      margin-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(20, 184, 166, .12) !important
     }
 
     .profile-menu-header p {
+      margin: 0;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       color: #e2e8f0 !important
     }
 
     .profile-menu a,
     .profile-menu button {
+      display: block;
+      width: 100%;
+      text-align: left;
       color: #94a3b8 !important;
       font-family: 'Inter', system-ui, sans-serif !important;
       font-size: .82rem !important;
       padding: .65rem 1rem !important;
       border-radius: 8px;
+      background: none;
+      border: none;
       transition: all .2s !important
     }
 
@@ -472,6 +539,7 @@
       }
     }
   </style>
+
 </head>
 
 <body>
@@ -492,6 +560,7 @@
       <a href="projects.html" class="nav-a on"><i class="fa-solid fa-rocket"></i><span>Explore</span></a>
       <span class="nav-lbl" style="margin-top:14px">Account</span>
       <a href="profile.html" class="nav-a"><i class="fa-solid fa-user"></i><span>Profile</span></a>
+      <a href="messages.html" class="nav-a"><i class="fa-solid fa-envelope"></i><span>Messages</span></a>
     </nav>
     <div class="side-foot">
       <div class="side-usr">
@@ -742,6 +811,10 @@
     /* ================================================================
        ALL ORIGINAL JS PRESERVED — only sidebar wiring added
     ================================================================ */
+    // Smart API URL
+    const API_URL = window.location.hostname === 'localhost'
+      ? 'http://localhost:5000'
+      : 'https://eduport-backend-6uib.onrender.com';
 
     // Sidebar mobile toggle
     const mobTogProj = document.getElementById('mob-tog-proj'), sideProj = document.getElementById('side'), ovProj = document.getElementById('ov-proj');
@@ -761,14 +834,14 @@
     // --- PRESERVED: Global variable to store projects data ---
     let projectsData = [];
 
-    // --- PRESERVED: Category mapping for books ---
+    // --- Category mapping for books (includes ALL techUsed enum values) ---
     const categoryMapping = {
-      web: ["web-development", "Web Development"],
-      data: ["devops", "DevOps", "Cloud & DevOps"],
-      landscape: ["ai-ml", "data-science", "AI/ML", "Data Science"],
-      photo: ["desktop-app", "Desktop Application"],
-      graphic: ["android-development", "ios-development", "Android Development", "iOS Development"],
-      writing: ["game-development", "Game Development"],
+      web: ["web-development"],
+      data: ["devops"],
+      landscape: ["ai-ml", "data-science"],
+      photo: ["desktop-app"],
+      graphic: ["android-development", "ios-development"],
+      writing: ["game-development"],
     };
 
     // --- PRESERVED: Fetch projects from backend ---
@@ -781,7 +854,7 @@
           return;
         }
 
-        const response = await fetch("http://localhost:5000/api/projects/community", {
+        const response = await fetch(`${API_URL}/api/projects/community`, {
           headers: { "x-auth-token": token },
         });
 
@@ -802,16 +875,17 @@
       }
     }
 
-    // --- PRESERVED: Get projects by category ---
+    // --- Get projects by category (case-insensitive) ---
     function getProjectsByCategory(bookClass) {
       const categories = categoryMapping[bookClass] || [];
       return projectsData.filter((project) => {
-        const techUsed = project.techUsed || '';
-        const category = project.category || '';
+        const techUsed = (project.techUsed || '').toLowerCase();
+        const category = (project.category || '').toLowerCase();
         return categories.some((cat) => {
-          return techUsed === cat ||
-            category.toLowerCase().includes(cat.toLowerCase()) ||
-            techUsed.toLowerCase().includes(cat.toLowerCase());
+          const catLower = cat.toLowerCase();
+          return techUsed === catLower ||
+            category.includes(catLower) ||
+            techUsed.includes(catLower);
         });
       });
     }
@@ -844,7 +918,7 @@
           const projectTitle = project.projectName || project.title || 'Untitled Project';
           const projectDesc = project.projectDescription || project.description || 'No description available';
           const authorName = project.user ? (project.user.name || project.user.email || 'Anonymous') : 'Anonymous';
-          const projectImage = project.screenshotUrl ? `http://localhost:5000${project.screenshotUrl}` : null;
+          const projectImage = project.screenshotUrl ? `${API_URL}${project.screenshotUrl}` : null;
 
           page.innerHTML = `
             <div style="height: 100%; display: flex; flex-direction: column;">
@@ -862,7 +936,10 @@
                       <div style="color: #666; font-size: 0.8rem;">Created: ${createdDate}</div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                      <span style="color: #666; font-size: 0.9rem;">👍 ${project.upvotes || 0}</span>
+                      <button class="upvote-rocket ${(project.upvotedBy || []).some(id => (id._id || id).toString() === currentUserId) ? 'voted' : ''}" data-id="${project._id}" onclick="event.stopPropagation();upvoteProject(this,'${project._id}')">
+                        <i class="fa-solid fa-rocket"></i>
+                        <span class="uv-count">${project.upvotedBy ? project.upvotedBy.length : (project.upvotes || 0)}</span>
+                      </button>
                       <span style="background: #e3f2fd; color: #1976d2; padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.8rem;">${project.category || 'General'}</span>
                     </div>
                   </div>
@@ -892,7 +969,7 @@
       const projectDesc = project.projectDescription || project.description || 'No description available';
       const authorName = project.user ? (project.user.name || project.user.email || 'Anonymous') : 'Anonymous';
       const createdDate = new Date(project.createdAt).toLocaleDateString();
-      const projectImage = project.screenshotUrl ? `http://localhost:5000${project.screenshotUrl}` : null;
+      const projectImage = project.screenshotUrl ? `${API_URL}${project.screenshotUrl}` : null;
 
       const modal = document.createElement('div');
       modal.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;justify-content:center;align-items:center;z-index:10000;padding:2rem;`;
@@ -948,70 +1025,87 @@
       }
     });
 
-    // --- UPDATED: User Profile Management (sync sidebar too) ---
-    async function loadUserProfile() {
+    // --- Current user ID for upvote state ---
+    let currentUserId = '';
+
+    // --- Upvote function with instant DOM update ---
+    async function upvoteProject(btn, projectId) {
+      const token = localStorage.getItem('token');
+      if (!token) { showToast('Please login first', 'error'); return; }
       try {
-        const token = localStorage.getItem("token");
-        if (!token) { window.location.href = "login.html"; return; }
-
-        const response = await fetch("http://localhost:5000/api/users/me", {
-          headers: { "x-auth-token": token },
+        const resp = await fetch(`${API_URL}/api/projects/${projectId}/upvote`, {
+          method: 'PUT',
+          headers: { 'x-auth-token': token }
         });
-
-        if (response.ok) {
-          const user = await response.json();
-          const name = user.name || user.email || "User";
-          const role = user.role || localStorage.getItem('userRole') || 'student';
-
-          // Top-bar profile
-          document.getElementById("profile-name").textContent = name;
-
-          // Handle profile picture for top-bar
-          const initial = name.charAt(0).toUpperCase();
-          const ava = user.profilePictureUrl
-            ? (user.profilePictureUrl.startsWith("http") ? user.profilePictureUrl : `http://localhost:5000${user.profilePictureUrl}`)
-            : `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0d9488&color=fff&bold=true&size=80`;
-          document.getElementById("profile-image").src = ava;
-
-          // Sidebar user info
-          document.getElementById("s-name").textContent = name;
-          document.getElementById("s-ava").src = ava;
-          document.getElementById("s-role").textContent = role.charAt(0).toUpperCase() + role.slice(1);
-          localStorage.setItem('userRole', role);
-        } else {
-          console.error("Failed to load user profile");
-          if (response.status === 401) {
-            localStorage.removeItem("token");
-            window.location.href = "login.html";
-          }
-        }
-      } catch (error) {
-        console.error("Error loading user profile:", error);
+        if (!resp.ok) { showToast('Upvote failed', 'error'); return; }
+        const updated = await resp.json();
+        const count = updated.upvotedBy ? updated.upvotedBy.length : (updated.upvotes || 0);
+        const voted = (updated.upvotedBy || []).some(id => (id._id || id).toString() === currentUserId);
+        // Update DOM
+        btn.querySelector('.uv-count').textContent = count;
+        btn.classList.toggle('voted', voted);
+        showToast(voted ? 'Upvoted!' : 'Vote removed', 'success');
+      } catch (e) {
+        console.error('Upvote error:', e);
+        showToast('Upvote failed — network error', 'error');
       }
     }
 
-    // --- PRESERVED: Logout ---
-    document.getElementById("logout-btn").addEventListener("click", () => {
-      localStorage.clear();
-      sessionStorage.clear();
-      window.location.href = "login.html";
-    });
 
-    // --- PRESERVED: Profile menu dropdown ---
-    const userProfileEl = document.getElementById("user-profile");
-    const profileMenuEl = document.getElementById("profile-menu");
-    userProfileEl.addEventListener("click", (e) => {
-      e.stopPropagation();
-      profileMenuEl.classList.toggle("show");
-    });
-    window.addEventListener("click", () => {
-      if (profileMenuEl.classList.contains("show")) {
-        profileMenuEl.classList.remove("show");
-      }
-    });
 
-    // --- PRESERVED: Load on page load ---
+    // --- Sidebar user profile loader ---
+    async function loadUserProfile() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const resp = await fetch(`${API_URL}/api/users/me`, { headers: { 'x-auth-token': token } });
+        if (resp.ok) {
+          const user = await resp.json();
+          const name = user.name || user.email || 'User';
+          const role = user.role || 'student';
+          const el = document.getElementById('s-name'); if (el) el.textContent = name;
+          const el2 = document.getElementById('s-role'); if (el2) el2.textContent = role.charAt(0).toUpperCase() + role.slice(1);
+          const ava = user.profilePictureUrl
+            ? (user.profilePictureUrl.startsWith('http') ? user.profilePictureUrl : `${API_URL}${user.profilePictureUrl}`)
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0d9488&color=fff&bold=true&size=80`;
+          const el3 = document.getElementById('s-ava'); if (el3) el3.src = ava;
+          const el4 = document.getElementById('profile-image'); if (el4) el4.src = ava;
+          const el5 = document.getElementById('profile-name'); if (el5) el5.textContent = name;
+          localStorage.setItem('userRole', role);
+          // Hide "Add Project" for teachers
+          if (role === 'teacher') { const el6 = document.getElementById('nav-create'); if (el6) el6.style.display = 'none'; }
+        }
+      } catch (e) { console.error('Profile error:', e); }
+    }
+
+    // --- Stub: loadUnreadMessages (messages feature) ---
+    async function loadUnreadMessages() {
+      // Notification messages are accessed via the Messages page
+    }
+
+    // --- Toast notification ---
+    function showToast(msg, type = 'info') {
+      const t = document.createElement('div'); t.className = `toast ${type}`;
+      const icons = { success: 'fa-check-circle', error: 'fa-circle-exclamation', info: 'fa-circle-info' };
+      t.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i>${msg}`;
+      document.body.appendChild(t); requestAnimationFrame(() => t.classList.add('show'));
+      setTimeout(() => { t.classList.remove('show'); setTimeout(() => { if (document.body.contains(t)) document.body.removeChild(t); }, 400); }, 3000);
+    }
+
+    // --- Load on page load ---
     window.addEventListener("load", async () => {
+      // Extract current user id for upvote state
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const parts = token.split('.');
+          if (parts.length === 3) {
+            const payload = JSON.parse(atob(parts[1]));
+            currentUserId = payload.user ? payload.user.id : (payload.id || '');
+          }
+        }
+      } catch (e) { console.error('Token parse error:', e); }
+
       await loadUserProfile();
       await fetchProjects();
     });

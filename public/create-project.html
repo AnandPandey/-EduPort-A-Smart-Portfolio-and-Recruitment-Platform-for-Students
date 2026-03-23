@@ -871,15 +871,19 @@
 
     <script>
         /* ================================================================
-           CREATE PROJECT JS — x-auth-token, localhost:5000
+           CREATE PROJECT JS — x-auth-token, API_URL
         ================================================================ */
+        const API_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:5000'
+            : 'https://eduport-backend-6uib.onrender.com';
+
         const token = localStorage.getItem('token');
         if (!token) window.location.href = 'login.html';
 
         // Sidebar user info
         (async () => {
             try {
-                const r = await fetch('http://localhost:5000/api/users/me', { headers: { 'x-auth-token': token } });
+                const r = await fetch(`${API_URL}/api/users/me`, { headers: { 'x-auth-token': token } });
                 if (r.ok) {
                     const u = await r.json();
                     const name = u.name || 'User';
@@ -973,7 +977,7 @@
                 formData.append('githubUrl', document.getElementById('github-url').value.trim());
                 formData.append('projectImage', fileInput.files[0]);
 
-                const response = await fetch('http://localhost:5000/api/projects', {
+                const response = await fetch(`${API_URL}/api/projects`, {
                     method: 'POST',
                     headers: { 'x-auth-token': token },
                     body: formData

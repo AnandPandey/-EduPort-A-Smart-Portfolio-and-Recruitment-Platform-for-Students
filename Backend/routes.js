@@ -12,7 +12,7 @@ const User = require('./models/User');
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     // Note: This path assumes your server is run from the 'backend' directory.
-    const uploadPath = path.join(__dirname, '../public/uploads/projects');
+    const uploadPath = path.join(__dirname, './uploads/projects');
     // Create the directory if it doesn't exist
     fs.mkdirSync(uploadPath, { recursive: true });
     cb(null, uploadPath);

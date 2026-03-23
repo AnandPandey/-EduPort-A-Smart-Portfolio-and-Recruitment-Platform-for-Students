@@ -1,3 +1,8 @@
+// Smart API URL: auto-switches between local dev and production
+const API_URL = window.location.hostname === 'localhost'
+    ? 'http://localhost:5000'
+    : 'https://eduport-backend-6uib.onrender.com';
+
 document.addEventListener('DOMContentLoaded', function () {
     // --- Helper function for notifications ---
     // (You can move this to a shared 'utils.js' file later if you want)
@@ -56,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             try {
                 // Send the data to the backend's POST /register route
-                const response = await fetch('http://localhost:5000/register', {
+                const response = await fetch(`${API_URL}/register`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -94,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const googleBtn = document.querySelector('.social-btn.google');
     if (googleBtn) {
         googleBtn.addEventListener('click', () => {
-            window.location.href = 'http://localhost:5000/auth/google';
+            window.location.href = `${API_URL}/auth/google`;
         });
     }
 });

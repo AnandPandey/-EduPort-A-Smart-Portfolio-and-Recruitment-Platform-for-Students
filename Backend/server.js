@@ -20,6 +20,7 @@ const auth = require('./middleware/auth');
 const projectRoutes = require('./routes');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'a_super_secret_jwt_key_that_is_long_and_random';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5500';
 
 // =================================================================
 // 2. INITIALIZE APP & CONNECT TO DATABASE
@@ -32,11 +33,26 @@ connectDB();
 // =================================================================
 // 3. SETUP MIDDLEWARE
 // =================================================================
-app.use(cors());
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        const allowedOrigins = [
+            FRONTEND_URL,
+            'http://localhost:5500',
+            'http://127.0.0.1:5500',
+            'http://localhost:3000'
+        ];
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true
+}));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Serve uploaded files from Backend/uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Mount project routes
 app.use('/api/projects', projectRoutes);
@@ -591,16 +607,16 @@ app.put('/api/messages/:id/read', auth, async (req, res) => {
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 app.get('/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: '/login.html', session: false }),
+    passport.authenticate('google', { failureRedirect: `${FRONTEND_URL}/login.html`, session: false }),
     (req, res) => {
-        const payload = { user: { id: req.user.id } };
+        const payload = { user: { id: req.user.id, role: req.user.role } };
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
-        res.redirect(`/dashboard.html?token=${token}`);
+        res.redirect(`${FRONTEND_URL}/dashboard.html?token=${token}`);
     });
 
 // =================================================================
 // 7. START THE SERVER
 // =================================================================
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Server is running on http://0.0.0.0:${port}`);
 });

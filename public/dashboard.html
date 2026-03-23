@@ -83,6 +83,9 @@
     </div>
     <script>
         (function () {
+            const API_URL = window.location.hostname === 'localhost'
+                ? 'http://localhost:5000'
+                : 'https://eduport-backend-6uib.onrender.com';
             // Handle token from URL (e.g. after Google OAuth)
             const params = new URLSearchParams(window.location.search);
             const urlToken = params.get('token');
@@ -100,7 +103,7 @@
             }
 
             // Fetch user profile to determine role
-            fetch('http://localhost:5000/api/users/me', {
+            fetch(`${API_URL}/api/users/me`, {
                 headers: { 'x-auth-token': token }
             })
                 .then(res => {
